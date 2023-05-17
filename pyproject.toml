@@ -8,6 +8,9 @@ packages = [{include = "count_crab"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+fastapi = "^0.95.2"
+uvicorn = "^0.22.0"
+line-bot-sdk = "^2.4.2"
 
 
 [build-system]
