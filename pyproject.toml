@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "count-crab"
+version = "0.1.0"
+description = ""
+authors = ["Isaman sangbumrung  <38631981+tao-Isaman@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "count_crab"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
