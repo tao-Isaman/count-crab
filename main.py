@@ -30,3 +30,8 @@ def handle_message(event):
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text))
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8080))  # Read the PORT environment variable or default to 8080
+    uvicorn.run(app, host="0.0.0.0", port=port)
