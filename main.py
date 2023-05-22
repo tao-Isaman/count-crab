@@ -43,7 +43,7 @@ def handle_image(event):
     # Azure endpoint and headers
     endpoint = os.environ.get("AZURE_PREDICT_URL")
     headers = {
-        'Prediction-Key': os.environ.get("AZURE_PREDICT_KEY")',
+        'Prediction-Key': os.environ.get("AZURE_PREDICT_KEY"),
         'Content-Type': 'application/octet-stream'
     }
 
