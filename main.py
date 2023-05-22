@@ -37,9 +37,12 @@ def handle_message(event):
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
+    print(message_content)
 
     # Use your function to classify the image
-    food_name, carb_estimation = classify_image(message_content.content)
+    # food_name, carb_estimation = classify_image(message_content.content)
+    food_name = "food_name"
+    carb_estimation = "carb_estimation"
 
     line_bot_api.reply_message(
         event.reply_token,
