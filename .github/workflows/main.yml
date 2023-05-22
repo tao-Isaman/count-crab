@@ -36,5 +36,5 @@ jobs:
         --region asia-southeast1 \
         --platform managed \
         --allow-unauthenticated \
-        --set-env-vars ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }},SECRET_CHANNEL=${{ secrets.SECRET_CHANNEL }} \
+        --set-env-vars ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }},SECRET_CHANNEL=${{ secrets.SECRET_CHANNEL }},AZURE_PREDICT_URL=${{ secrets.AZURE_PREDICT_URL }},AZURE_PREDICT_KEY=${{ secrets.AZURE_PREDICT_KEY }}  \
         --max-instances=10
