@@ -55,10 +55,11 @@ async def classify_image(
         'ข้าวขาหมู':3.3,
         'ข้าวคลุกกะปิ':2.7,
         'ข้าวซอย':2.7,
-        'ข้าวผัด':3.1',
+        'ข้าวผัด':3.1,
         'ข้าวมันไก่':2.3,
         'ข้าวหมกไก่': 3.6
     }
+    
     # Azure endpoint and headers
     endpoint = os.environ.get("AZURE_PREDICT_URL")
     headers = {
