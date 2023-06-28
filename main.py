@@ -50,6 +50,7 @@ async def classify_image(
     current_sugar: float = Form(...),
     weight: float = Form(...)
     ):
+    
     # crab data 
     crab_food = {
         'ข้าวขาหมู':3.3,
@@ -57,7 +58,17 @@ async def classify_image(
         'ข้าวซอย':2.7,
         'ข้าวผัด':3.1,
         'ข้าวมันไก่':2.3,
-        'ข้าวหมกไก่': 3.6
+        'ข้าวหมกไก่': 3.6,
+        'แกงเขียวหวานไก่': None,
+        'แกงเทโพ': None,
+        'แกงเลียง': None,
+        'แกงจืดเต้าหู้หมูสับ': None,
+        'แกงจืดมะระยัดไส้': None,
+        'แกงมัสมั่นไก่': None,
+        'แกงส้มกุ้ง': None,
+        'ไก่ผัดเม็ดมะม่วงหิมพานต์': None,
+        'ไข่เจียว': None,
+        'ไข่ดาว': None,
     }
     
     # Azure endpoint and headers
