@@ -50,7 +50,7 @@ async def classify_image(
     current_sugar: float = Form(...),
     weight: float = Form(...)
     ):
-    
+
     # crab data 
     crab_food = {
         'ข้าวขาหมู':3.3,
@@ -88,10 +88,15 @@ async def classify_image(
         food_name = best_prediction['tagName']
         carb_estimation = '200'  # Adjust this based on how you get the carb estimation
 
+        carb_partion = crab_food[food_name]
+        if carb_partion == None:
+            carb_partion = 0
+
+
         return {
             'food_name': food_name,
-            'carb_estimation': crab_food[food_name] * 15,
-            'insulin' : calculate_insulin(weight, crab_food[food_name], current_sugar)
+            'carb_estimation': carb_partion * 15,
+            'insulin' : calculate_insulin(weight, carb_partion, current_sugar)
         }
     else:
         raise HTTPException(status_code=500, detail=f"Error making prediction: {response.status_code}, {response.text}")
