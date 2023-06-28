@@ -30,6 +30,61 @@ async def webhook(request: Request):
         
     return 'OK'
 
+
+
+def calculate_insulin(weight: int, carb_portion: float, current_sugar: int):
+    CRAB_FACTOR = 15
+    EXPECTED_SUGAR = 140 # mg/dL
+
+    icr = 300 / 0.5 * weight
+    insulin_senitivity = 1800 * 0.5 / weight
+
+    insulin = (current_sugar - EXPECTED_SUGAR) + icr
+
+    return insulin
+
+
+@app.post("/classify")
+async def classify_image(
+    file: UploadFile = File(...),
+    current_sugar: float = Form(...),
+    weight: float = Form(...)
+    ):
+    # crab data 
+    crab_food = {
+        'ข้าวขาหมู':3.3,
+        'ข้าวคลุกกะปิ':2.7,
+        'ข้าวซอย':2.7,
+        'ข้าวผัด':3.1',
+        'ข้าวมันไก่':2.3,
+        'ข้าวหมกไก่': 3.6
+    }
+    # Azure endpoint and headers
+    endpoint = os.environ.get("AZURE_PREDICT_URL")
+    headers = {
+        'Prediction-Key': os.environ.get("AZURE_PREDICT_KEY"),
+        'Content-Type': 'application/octet-stream'
+    }
+
+    # Send image content to Azure Custom Vision
+    response = requests.post(endpoint, headers=headers, data=await file.read())
+
+    # Process the response from Azure Custom Vision
+    if response.status_code == 200:
+        prediction_result = response.json()
+        best_prediction = max(prediction_result['predictions'], key=lambda x: x['probability'])
+        food_name = best_prediction['tagName']
+        carb_estimation = '200'  # Adjust this based on how you get the carb estimation
+
+        return {
+            'food_name': food_name,
+            'carb_estimation': crab_food[food_name] * 15,
+            'insulin' : calculate_insulin(weight, crab_food[food_name], current_sugar)
+        }
+    else:
+        raise HTTPException(status_code=500, detail=f"Error making prediction: {response.status_code}, {response.text}")
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     line_bot_api.reply_message(
