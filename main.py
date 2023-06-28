@@ -69,6 +69,7 @@ async def classify_image(
         'ไก่ผัดเม็ดมะม่วงหิมพานต์': None,
         'ไข่เจียว': None,
         'ไข่ดาว': None,
+        'ไข่พะโล้': None,
     }
     
     # Azure endpoint and headers
