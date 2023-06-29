@@ -2,6 +2,7 @@ import os
 import requests
 
 from fastapi import FastAPI, HTTPException, Request, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage
