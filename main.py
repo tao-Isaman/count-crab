@@ -8,6 +8,14 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMess
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 access_token = os.environ.get("ACCESS_TOKEN")
 secret_channel = os.environ.get("SECRET_CHANNEL")
 
