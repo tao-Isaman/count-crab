@@ -14,6 +14,27 @@ secret_channel = os.environ.get("SECRET_CHANNEL")
 line_bot_api = LineBotApi(access_token)
 handler = WebhookHandler(secret_channel)
 
+# crab data 
+crab_food = {
+        'ข้าวขาหมู':3.3,
+        'ข้าวคลุกกะปิ':2.7,
+        'ข้าวซอย':2.7,
+        'ข้าวผัด':3.1,
+        'ข้าวมันไก่':2.3,
+        'ข้าวหมกไก่': 3.6,
+        'แกงเขียวหวาน': None,
+        'แกงเทโพ': None,
+        'แกงเลียง': None,
+        'แกงจืดเต้าหู้หมูสับ': None,
+        'แกงจืดมะระยัดไส้': None,
+        'แกงมัสมั่นไก่': None,
+        'แกงส้มกุ้ง': None,
+        'ไก่ผัดเม็ดมะม่วงหิมพานต์': None,
+        'ไข่เจียว': None,
+        'ไข่ดาว': None,
+        'ไข่พะโล้': None,
+    }
+
 @app.post("/webhook")
 async def webhook(request: Request):
     # get X-Line-Signature header value
@@ -51,26 +72,6 @@ async def classify_image(
     weight: float = Form(...)
     ):
 
-    # crab data 
-    crab_food = {
-        'ข้าวขาหมู':3.3,
-        'ข้าวคลุกกะปิ':2.7,
-        'ข้าวซอย':2.7,
-        'ข้าวผัด':3.1,
-        'ข้าวมันไก่':2.3,
-        'ข้าวหมกไก่': 3.6,
-        'แกงเขียวหวาน': None,
-        'แกงเทโพ': None,
-        'แกงเลียง': None,
-        'แกงจืดเต้าหู้หมูสับ': None,
-        'แกงจืดมะระยัดไส้': None,
-        'แกงมัสมั่นไก่': None,
-        'แกงส้มกุ้ง': None,
-        'ไก่ผัดเม็ดมะม่วงหิมพานต์': None,
-        'ไข่เจียว': None,
-        'ไข่ดาว': None,
-        'ไข่พะโล้': None,
-    }
     
     # Azure endpoint and headers
     endpoint = os.environ.get("AZURE_PREDICT_URL")
@@ -105,9 +106,10 @@ async def classify_image(
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=event.message.text))
+    # line_bot_api.reply_message(
+    #     event.reply_token,
+    #     TextSendMessage(text=event.message.text))
+    pass
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
@@ -132,11 +134,15 @@ def handle_image(event):
         best_prediction = max(prediction_result['predictions'], key=lambda x: x['probability'])
         food_name = best_prediction['tagName']
         # carb_estimation = best_prediction['probability']  # Adjust this based on how you get the carb estimation
-        carb_estimation = '200'
-
-        line_bot_api.reply_message(
+        carb_estimation = crab_food[food_name] 
+        if carb_estimation == None:
+            line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=f"The food is {food_name} with an estimated {carb_estimation}g of carbs"))
+            TextSendMessage(text=f"เมนูนี้คือ {food_name} และเมนูนี้ยังไม่มี คาร์โบไฮเดรทในระบบค่ะ"))
+        else:
+            line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"เมนูนี้คือ {food_name} มีคาร์โบไฮเดรทอยู่ที่ประมาณ {carb_estimation * 15} กรัมค่ะ"))
     else:
         print(f"Error making prediction: {response.status_code}, {response.text}")
 
