@@ -69,7 +69,7 @@ def calculate_insulin(weight: int, carb_portion: float, current_sugar: int):
     icr = 300 / 0.5 * weight
     insulin_senitivity = 1800 * 0.5 / weight
 
-    insulin = (current_sugar - EXPECTED_SUGAR) + ((carb_portion * CRAB_FACTOR) / icr)
+    insulin = (current_sugar - EXPECTED_SUGAR / insulin_senitivity) + ((carb_portion * CRAB_FACTOR) / icr)
 
     return insulin
 
