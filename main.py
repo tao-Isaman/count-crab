@@ -125,7 +125,7 @@ async def classify_with_openai(image_data):
 @app.post("/classify")
 def classify_image(file: UploadFile = File(...)):
     # Process image with OpenAI
-    image_data = await file.read()
+    image_data = file.read()
     try:
         classification_result = classify_with_openai(image_data)
         return classification_result
