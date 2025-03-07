@@ -27,18 +27,14 @@ jobs:
 
     - name: Build and push Docker image to Artifact Registry
       run: |
-        # Create repository if it doesn't exist (optional)
-        gcloud artifacts repositories create count-crab-repo --repository-format=docker \
-          --location=asia-southeast1 --description="Docker repository for count-crab" || true
-        
-        # Build and push to Artifact Registry
-        docker build -t asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/count-crab-repo/count-crab:${{ github.sha }} .
-        docker push asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/count-crab-repo/count-crab:${{ github.sha }}
+        # Build and push to the specific Artifact Registry repository
+        docker build -t asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }} .
+        docker push asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }}
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy count-crab \
-        --image asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/count-crab-repo/count-crab:${{ github.sha }} \
+        --image asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }} \
         --region asia-southeast1 \
         --platform managed \
         --allow-unauthenticated \
