@@ -123,11 +123,11 @@ async def classify_with_openai(image_data):
         )
 
 @app.post("/classify")
-async def classify_image(file: UploadFile = File(...)):
+def classify_image(file: UploadFile = File(...)):
     # Process image with OpenAI
     image_data = await file.read()
     try:
-        classification_result = await classify_with_openai(image_data)
+        classification_result = classify_with_openai(image_data)
         return classification_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error classifying image: {str(e)}")
