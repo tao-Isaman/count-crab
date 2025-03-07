@@ -141,13 +141,13 @@ def handle_message(event):
     )
 
 @handler.add(MessageEvent, message=ImageMessage)
-async def handle_image(event):
+def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     image_data = message_content.content
     
     try:
         # Use OpenAI to classify the image
-        food_info = await classify_with_openai(image_data)
+        food_info = classify_with_openai(image_data)
         
         # Check if it's food or not
         if "name" in food_info and "นี่ไม่ใช่รูปภาพอาหาร" in food_info["name"]:
