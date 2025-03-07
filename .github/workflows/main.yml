@@ -5,38 +5,56 @@ on:
     branches:
       - main
 
+env:
+  PROJECT_ID: prompt-lab-383408
+  REGISTRY: asia-southeast1-docker.pkg.dev
+  REPOSITORY: count-carb-ai
+  SERVICE: count-crab
+  REGION: asia-southeast1
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
+    # Authenticate directly with the service account key
+    - name: Set up Cloud SDK with Service Account Key
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    # Install Google Cloud components
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        install_components: 'gke-gcloud-auth-plugin'
-        export_default_credentials: true
+        project_id: ${{ env.PROJECT_ID }}
+        install_components: 'beta'
 
-    - name: Configure Docker for Artifact Registry
+    # Configure Docker with explicit authentication
+    - name: Configure Docker with explicit authentication
       run: |
-        gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+        gcloud --quiet auth configure-docker $REGISTRY
 
-    - name: Build and push Docker image to Artifact Registry
+    # Build the Docker image
+    - name: Build Docker image
       run: |
-        # Build and push to the specific Artifact Registry repository
-        docker build -t asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }} .
-        docker push asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }}
+        docker build -t $REGISTRY/$PROJECT_ID/$REPOSITORY/$SERVICE:${{ github.sha }} .
 
+    # Push the Docker image
+    - name: Push Docker image
+      run: |
+        docker push $REGISTRY/$PROJECT_ID/$REPOSITORY/$SERVICE:${{ github.sha }}
+
+    # Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy count-crab \
-        --image asia-southeast1-docker.pkg.dev/prompt-lab-383408/count-carb-ai/count-crab:${{ github.sha }} \
-        --region asia-southeast1 \
-        --platform managed \
-        --allow-unauthenticated \
-        --set-env-vars ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }},SECRET_CHANNEL=${{ secrets.SECRET_CHANNEL }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-        --max-instances=10
+        gcloud run deploy $SERVICE \
+          --image $REGISTRY/$PROJECT_ID/$REPOSITORY/$SERVICE:${{ github.sha }} \
+          --region $REGION \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }},SECRET_CHANNEL=${{ secrets.SECRET_CHANNEL }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          --max-instances=10
