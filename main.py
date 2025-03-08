@@ -167,6 +167,7 @@ def handle_image(event):
     try:
         # ✅ Use `await` to call async function
         food_info = classify_with_openai(image_data)
+        food_info = json.loads(food_info)
 
         # ✅ Await logging function if it's async
         log_food_info(food_info)
