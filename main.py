@@ -1,10 +1,9 @@
 import os
+import sys
 import requests
 import base64
 import json
 import logging
-import sys
-import asyncio
 
 from fastapi import (
     FastAPI, 
@@ -68,9 +67,9 @@ line_bot_api = LineBotApi(access_token)
 handler = WebhookHandler(secret_channel)
 
 # ------------------------------------------------------------------------------
-# Utility: Structured Logging to Cloud Run
+# Utility: Structured Logging to Cloud Run (Synchronous)
 # ------------------------------------------------------------------------------
-async def log_food_info(food_info: dict):
+def log_food_info(food_info: dict):
     """
     Logs food information in a structured JSON format for Cloud Logging.
     """
@@ -82,12 +81,11 @@ async def log_food_info(food_info: dict):
     logging.info(json.dumps(log_data, ensure_ascii=False))
 
 # ------------------------------------------------------------------------------
-# OpenAI Image Classification (Async)
+# OpenAI Image Classification (Synchronous)
 # ------------------------------------------------------------------------------
-async def classify_with_openai(image_data: bytes) -> dict:
+def classify_with_openai(image_data: bytes) -> dict:
     """
-    Use OpenAI's API to classify food images.
-    This function is written as 'async' for compatibility, but uses requests (sync).
+    Use OpenAI's API to classify food images (synchronously).
     """
     # Convert binary image to base64
     base64_image = base64.b64encode(image_data).decode("utf-8")
@@ -97,7 +95,7 @@ async def classify_with_openai(image_data: bytes) -> dict:
 
     # Prepare the payload
     payload = {
-        "model": "gpt-4o",  # Example name, adjust if needed
+        "model": "gpt-4o",  # Example model name, adjust to your usage
         "messages": [
             {
                 "role": "system",
@@ -108,7 +106,7 @@ async def classify_with_openai(image_data: bytes) -> dict:
                             "You are an image classification machine. I will give you a Thai food image; "
                             "you will answer the name of the food.\n"
                             'If it is not a food image, respond with "นี่ไม่ใช่รูปภาพอาหารค่ะ".\n'
-                            "Also return an estimate of nutrition (protein, carb, fat, sodium, calories)\n"
+                            "Also return an estimate of nutrition (protein, carb, fat, sodium, calories) "
                             "in JSON format.\n\n"
                             "## JSON Example\n"
                             "{\n"
@@ -135,8 +133,6 @@ async def classify_with_openai(image_data: bytes) -> dict:
                 ],
             },
         ],
-        # The "response_format" and "max_completion_tokens" might differ 
-        # depending on your actual OpenAI model usage
         "response_format": {"type": "text"},
         "temperature": 1,
         "max_completion_tokens": 2048,
@@ -150,7 +146,7 @@ async def classify_with_openai(image_data: bytes) -> dict:
         "Authorization": f"Bearer {openai_api_key}"
     }
 
-    # Make synchronous request inside async function
+    # Make synchronous request
     response = requests.post(url, headers=headers, json=payload)
     if response.status_code != 200:
         raise HTTPException(
@@ -200,13 +196,13 @@ async def webhook(request: Request):
 # /classify Endpoint (Direct API for Testing)
 # ------------------------------------------------------------------------------
 @app.post("/classify")
-async def classify_image(file: UploadFile = File(...)):
+def classify_image(file: UploadFile = File(...)):
     """
     Accepts an image upload and returns classification/nutrition info (via OpenAI).
     """
-    image_data = await file.read()
+    image_data = file.file.read()
     try:
-        classification_result = await classify_with_openai(image_data)
+        classification_result = classify_with_openai(image_data)
         return classification_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error classifying image: {str(e)}")
@@ -217,7 +213,7 @@ async def classify_image(file: UploadFile = File(...)):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event: MessageEvent):
     """
-    Simply responds with a prompt to send an image.
+    Simple text response prompting the user to send an image.
     """
     line_bot_api.reply_message(
         event.reply_token,
@@ -228,22 +224,22 @@ def handle_text_message(event: MessageEvent):
     )
 
 # ------------------------------------------------------------------------------
-# LINE ImageMessage Handler (Async)
+# LINE ImageMessage Handler (Synchronous)
 # ------------------------------------------------------------------------------
-@handler.async_add(MessageEvent, message=ImageMessage)
-async def handle_image_message(event: MessageEvent):
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_image_message(event: MessageEvent):
     """
     Handles an incoming image message: calls OpenAI to classify, logs info, and responds.
     """
-    # 1) Download the image data
-    message_content = line_bot_api.get_message_content(event.message.id)
-    image_data = message_content.content  # Synchronous method
-
     try:
-        # 2) Classify the image (async)
-        food_info = await classify_with_openai(image_data)
+        # 1) Download the image data
+        message_content = line_bot_api.get_message_content(event.message.id)
+        image_data = message_content.content
 
-        # 3) Convert to dict if it's still a JSON string
+        # 2) Classify the image (synchronously)
+        food_info = classify_with_openai(image_data)
+
+        # 3) If `food_info` is still a JSON string, parse it
         if isinstance(food_info, str):
             try:
                 food_info = json.loads(food_info)
@@ -252,7 +248,7 @@ async def handle_image_message(event: MessageEvent):
                 food_info = {"name": "ไม่สามารถระบุชื่ออาหารได้"}
 
         # 4) Log the info
-        await log_food_info(food_info)
+        log_food_info(food_info)
 
         # 5) Build response text
         food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
@@ -273,7 +269,7 @@ async def handle_image_message(event: MessageEvent):
         )
 
         # 6) Reply to user
-        await line_bot_api.reply_message(
+        line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=response_text)
         )
@@ -281,8 +277,7 @@ async def handle_image_message(event: MessageEvent):
     except Exception as e:
         error_message = f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}"
         logging.error(json.dumps({"severity": "ERROR", "message": error_message}))
-
-        await line_bot_api.reply_message(
+        line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=error_message)
         )
@@ -291,7 +286,7 @@ async def handle_image_message(event: MessageEvent):
 # Debug Endpoints to Test Sending Nutrition to a User
 # ------------------------------------------------------------------------------
 @app.post("/debug/send-nutrition")
-async def debug_send_nutrition(
+def debug_send_nutrition(
     user_id: str = Form(...),
     food_name: str = Form(...),
     protein: Optional[float] = Form(None),
@@ -325,7 +320,6 @@ async def debug_send_nutrition(
         )
 
         line_bot_api.push_message(user_id, TextSendMessage(text=response_text))
-
         return {
             "status": "success",
             "message": "Nutrition data sent to Line user",
@@ -338,7 +332,7 @@ async def debug_send_nutrition(
         )
 
 @app.post("/debug/send-nutrition-json")
-async def debug_send_nutrition_json(data: Dict[str, Any] = Body(...)):
+def debug_send_nutrition_json(data: Dict[str, Any] = Body(...)):
     """
     Debug endpoint accepting JSON to directly send nutritional data to a Line user.
     JSON Example:
@@ -390,7 +384,7 @@ async def debug_send_nutrition_json(data: Dict[str, Any] = Body(...)):
         )
 
 # ------------------------------------------------------------------------------
-# Uvicorn Entry Point
+# Uvicorn Entry Point (if running locally or Docker without Gunicorn)
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
