@@ -273,7 +273,7 @@ def handle_image_message(event: MessageEvent):
         # 6) Reply to user
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=response_text)
+            TextSendMessage(text=flex_message)
         )
 
     except Exception as e:
