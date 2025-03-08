@@ -180,7 +180,7 @@ async def log_food_info(food_info):
     }
     logging.info(json.dumps(log_data, ensure_ascii=False))
 
-@handler.add(MessageEvent, message=ImageMessage)
+@handler.async_add(MessageEvent, message=ImageMessage)
 async def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     image_data = message_content.content
