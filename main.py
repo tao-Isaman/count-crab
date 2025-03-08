@@ -18,6 +18,15 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
+def log_food_info(food_info):
+    """Logs food information in a structured way for Cloud Logging"""
+    log_data = {
+        "severity": "INFO",
+        "message": "Food classification result",
+        "food_info": food_info
+    }
+    logging.info(json.dumps(log_data, ensure_ascii=False))
+
 
 app = FastAPI()
 
