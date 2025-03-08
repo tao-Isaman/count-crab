@@ -160,16 +160,16 @@ def handle_message(event):
     )
 
 @handler.add(MessageEvent, message=ImageMessage)
-async def handle_image(event):
+def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     image_data = message_content.content
 
     try:
         # ✅ Use `await` to call async function
-        food_info = await classify_with_openai(image_data)
+        food_info = classify_with_openai(image_data)
 
         # ✅ Await logging function if it's async
-        await log_food_info(food_info)
+        log_food_info(food_info)
 
         # ✅ Ensure response is a string (convert dict to formatted text)
         if isinstance(food_info, dict):
@@ -193,7 +193,7 @@ async def handle_image(event):
             response_text = str(food_info)
 
         # ✅ Send response
-        await line_bot_api.reply_message(
+        line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=response_text)
         )
@@ -204,7 +204,7 @@ async def handle_image(event):
         # ✅ Log the error properly
         logging.error(json.dumps({"severity": "ERROR", "message": error_message}))
 
-        await line_bot_api.reply_message(
+        line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=error_message)
         )
