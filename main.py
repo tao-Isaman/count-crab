@@ -107,7 +107,8 @@ def classify_with_openai(image_data: bytes) -> dict:
                             "You are an image classification machine. I will give you a Thai food image; "
                             "you will answer the name of the food.\n"
                             'If it is not a food image, respond with "นี่ไม่ใช่รูปภาพอาหารค่ะ".\n'
-                            "Also return an estimate of nutrition (protein, carb, fat, sodium, calories) "
+                            "Also return an estimate of nutrition (protein, carb, fat, sodium, calories, materials, details)"
+                            "materials is meal core materials of food. details is mean advice message about food is field are need long message"
                             "in JSON format.\n\n"
                             "## JSON Example\n"
                             "{\n"
@@ -117,6 +118,8 @@ def classify_with_openai(image_data: bytes) -> dict:
                             '"fat": 20,\n'
                             '"sodium": 10,\n'
                             '"calories": 20\n'
+                            '"materials": "เส้นหมี่, หมู, ผัก, พริก, ซอสปรุงรส,\n'
+                            '"details": "ผัดไทยเป็นอาหารที่มีคุณค่าทางโภชนาการครบถ้วน แต่ควรรับประทานในปริมาณที่เหมาะสม เนื่องจากมีแป้งและน้ำมันค่อนข้างมาก ทานคู่กับผักสดที่เสิร์ฟมาด้วยเพื่อเพิ่มใยอาหารและวิตามิน บีบมะนาวเพิ่มรสชาติแทนการเติมน้ำตาลหรือน้ำปลา เพื่อลดปริมาณโซเดียมและน้ำตาล ผัดไทยเป็นอาหารที่ให้พลังงานค่อนข้างสูง จึงเหมาะสำหรับมื้อกลางวันมากกว่ามื้อเย็น สำหรับผู้ที่ควบคุมน้ำหนัก ควรรับประทานในปริมาณครึ่งจาน และเพิ่มสัดส่วนผักเคียงให้มากขึ้น การทานผัดไทยหลังออกกำลังกายจะช่วยเติมพลังงานได้ดี เนื่องจากมีทั้งโปรตีนจากไข่และกุ้ง และคาร์โบไฮเดรตจากเส้น'
                             "}\n"
                         )
                     }
@@ -418,15 +421,6 @@ def create_flex_nutrition_message(food_info):
                             "layout": "baseline",
                             "spacing": "sm",
                             "contents": [
-                                {"type": "text", "text": "น้ำหนัก:", "color": "#aaaaaa", "size": "sm", "flex": 2},
-                                {"type": "text", "text": f"{food_info.get('weight', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
-                            ]
-                        },
-                        {
-                            "type": "box",
-                            "layout": "baseline",
-                            "spacing": "sm",
-                            "contents": [
                                 {"type": "text", "text": "แคลอรี่:", "color": "#aaaaaa", "size": "sm", "flex": 2},
                                 {"type": "text", "text": f"{food_info.get('calories', 'N/A')} กิโลแคลอรี่", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
                             ]
@@ -483,7 +477,7 @@ def create_flex_nutrition_message(food_info):
                 },
                 {
                     "type": "text",
-                    "text": "ข้อมูลวัตถุดิบกำลังรอการอัปเดต",
+                    "text": f"{food_info.get('materials', 'ข้อมูลวัตถุกำลังอยู่ในระหว่างการพัฒนา')}",
                     "wrap": True,
                     "size": "sm",
                     "color": "#666666",
@@ -503,7 +497,7 @@ def create_flex_nutrition_message(food_info):
                 },
                 {
                     "type": "text",
-                    "text": "ข้อมูลคำแนะนำกำลังรอการอัปเดต",
+                    "text": f"{food_info.get('details', 'ข้อมูลคำแนะนำกำลังอยู่ในระหว่างการพัฒนา')}",
                     "wrap": True,
                     "size": "sm",
                     "color": "#666666",
