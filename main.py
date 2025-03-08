@@ -150,30 +150,30 @@ def handle_image(event):
         food_info = classify_with_openai(image_data)
         
         # Check if it's food or not
-        if "name" in food_info and "นี่ไม่ใช่รูปภาพอาหาร" in food_info["name"]:
-            response_text = food_info["name"]
-        else:
-            # Format the nutrition information
-            food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
-            protein = food_info.get("protein", "N/A")
-            carb = food_info.get("carbohydrate", "N/A")
-            fat = food_info.get("fat", "N/A")
-            sodium = food_info.get("sodium", "N/A")
-            calories = food_info.get("calories", "N/A")
+        # if "name" in food_info and "นี่ไม่ใช่รูปภาพอาหาร" in food_info["name"]:
+        #     response_text = food_info["name"]
+        # else:
+        #     # Format the nutrition information
+        #     food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
+        #     protein = food_info.get("protein", "N/A")
+        #     carb = food_info.get("carbohydrate", "N/A")
+        #     fat = food_info.get("fat", "N/A")
+        #     sodium = food_info.get("sodium", "N/A")
+        #     calories = food_info.get("calories", "N/A")
             
-            response_text = (
-                f"อาหารนี้คือ: {food_name}\n"
-                f"คุณค่าทางโภชนาการโดยประมาณ:\n"
-                f"โปรตีน: {protein} กรัม\n"
-                f"คาร์โบไฮเดรต: {carb} กรัม\n"
-                f"ไขมัน: {fat} กรัม\n"
-                f"โซเดียม: {sodium} มิลลิกรัม\n"
-                f"แคลอรี่: {calories} กิโลแคลอรี่"
-            )
+        #     response_text = (
+        #         f"อาหารนี้คือ: {food_name}\n"
+        #         f"คุณค่าทางโภชนาการโดยประมาณ:\n"
+        #         f"โปรตีน: {protein} กรัม\n"
+        #         f"คาร์โบไฮเดรต: {carb} กรัม\n"
+        #         f"ไขมัน: {fat} กรัม\n"
+        #         f"โซเดียม: {sodium} มิลลิกรัม\n"
+        #         f"แคลอรี่: {calories} กิโลแคลอรี่"
+        #     )
         
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=response_text)
+            TextSendMessage(text=food_info)
         )
     except Exception as e:
         line_bot_api.reply_message(
