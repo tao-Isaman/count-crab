@@ -400,29 +400,127 @@ def create_flex_nutrition_message(food_info):
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {"type": "text", "text": food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้"), "weight": "bold", "size": "xl", "margin": "md"},
+                {
+                    "type": "text",
+                    "text": food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้"),
+                    "weight": "bold",
+                    "size": "xl",
+                    "margin": "md"
+                },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "margin": "lg",
                     "spacing": "sm",
                     "contents": [
-                        {"type": "box", "layout": "baseline", "spacing": "sm",
-                         "contents": [{"type": "text", "text": "น้ำหนัก:", "color": "#aaaaaa", "size": "sm", "flex": 2},
-                                      {"type": "text", "text": f"{food_info.get('weight', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}]},
-                        {"type": "box", "layout": "baseline", "spacing": "sm",
-                         "contents": [{"type": "text", "text": "แคลอรี่:", "color": "#aaaaaa", "size": "sm", "flex": 2},
-                                      {"type": "text", "text": f"{food_info.get('calories', 'N/A')} กิโลแคลอรี่", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}]}
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "น้ำหนัก:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('weight', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "แคลอรี่:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('calories', 'N/A')} กิโลแคลอรี่", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "โปรตีน:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('protein', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "ไขมัน:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('fat', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "คาร์โบไฮเดรต:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('carbohydrate', 'N/A')} กรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                {"type": "text", "text": "โซเดียม:", "color": "#aaaaaa", "size": "sm", "flex": 2},
+                                {"type": "text", "text": f"{food_info.get('sodium', 'N/A')} มิลลิกรัม", "wrap": True, "color": "#666666", "size": "sm", "flex": 3}
+                            ]
+                        }
                     ]
                 },
-                {"type": "separator", "margin": "lg"},
-                {"type": "text", "text": "วัตถุดิบ", "weight": "bold", "size": "md", "margin": "lg", "color": "#1DB446"},
-                {"type": "text", "text": "ข้อมูลวัตถุดิบกำลังรอการอัปเดต", "wrap": True, "size": "sm", "color": "#666666", "margin": "sm"},
-                {"type": "separator", "margin": "lg"},
-                {"type": "text", "text": "คำแนะนำ", "weight": "bold", "size": "md", "margin": "lg", "color": "#1DB446"},
-                {"type": "text", "text": "ข้อมูลคำแนะนำกำลังรอการอัปเดต", "wrap": True, "size": "sm", "color": "#666666", "margin": "sm"},
-                {"type": "separator", "margin": "lg"},
-                {"type": "text", "text": "Note: ข้อมูลนี้เป็นการประมาณค่าจาก AI และอาจมีความคลาดเคลื่อนได้", "wrap": True, "size": "xs", "color": "#FF6B6E", "margin": "lg"}
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "วัตถุดิบ",
+                    "weight": "bold",
+                    "size": "md",
+                    "margin": "lg",
+                    "color": "#1DB446"
+                },
+                {
+                    "type": "text",
+                    "text": "ข้อมูลวัตถุดิบกำลังรอการอัปเดต",
+                    "wrap": True,
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "คำแนะนำ",
+                    "weight": "bold",
+                    "size": "md",
+                    "margin": "lg",
+                    "color": "#1DB446"
+                },
+                {
+                    "type": "text",
+                    "text": "ข้อมูลคำแนะนำกำลังรอการอัปเดต",
+                    "wrap": True,
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "Note: ข้อมูลนี้เป็นการประมาณค่าจาก AI และอาจมีความคลาดเคลื่อนได้",
+                    "wrap": True,
+                    "size": "xs",
+                    "color": "#FF6B6E",
+                    "margin": "lg"
+                }
             ]
         },
         "footer": {
@@ -430,8 +528,16 @@ def create_flex_nutrition_message(food_info):
             "layout": "horizontal",
             "spacing": "sm",
             "contents": [
-                {"type": "button", "style": "primary", "color": "#1DB446",
-                 "action": {"type": "uri", "label": "แก้ไขข้อมูลอาหาร", "uri": "https://example.com/edit"}}
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#1DB446",
+                    "action": {
+                        "type": "uri",
+                        "label": "แนะนำอาหารที่คล้ายกัน",
+                        "uri": "https://example.com/edit"
+                    }
+                }
             ]
         }
     }
