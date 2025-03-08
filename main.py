@@ -159,42 +159,67 @@ def handle_message(event):
         TextSendMessage(text="ส่งรูปอาหารมาให้ฉันได้เลยค่ะ จะบอกว่าอาหารอะไรและมีคุณค่าทางโภชนาการเท่าไหร่")
     )
 
+import logging
+import json
+import sys
+from linebot.models import MessageEvent, ImageMessage, TextSendMessage
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+async def log_food_info(food_info):
+    """Logs food information in a structured way for Cloud Logging"""
+    log_data = {
+        "severity": "INFO",
+        "message": "Food classification result",
+        "food_info": food_info
+    }
+    logging.info(json.dumps(log_data, ensure_ascii=False))
+
 @handler.add(MessageEvent, message=ImageMessage)
-def handle_image(event):
+async def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     image_data = message_content.content
 
     try:
-        # ✅ Use `await` to call async function
-        food_info = classify_with_openai(image_data)
-        food_info = json.loads(food_info)
+        # ✅ Use `await` to get the actual result
+        food_info = await classify_with_openai(image_data)
 
-        # ✅ Await logging function if it's async
-        log_food_info(food_info)
+        # ✅ Convert to JSON if it's a string
+        if isinstance(food_info, str):
+            try:
+                food_info = json.loads(food_info)
+            except json.JSONDecodeError:
+                logging.error("Error: food_info is not a valid JSON string")
+                food_info = {"name": "ไม่สามารถระบุชื่ออาหารได้"}
 
-        # ✅ Ensure response is a string (convert dict to formatted text)
-        if isinstance(food_info, dict):
-            food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
-            protein = food_info.get("protein", "N/A")
-            carb = food_info.get("carbohydrate", "N/A")
-            fat = food_info.get("fat", "N/A")
-            sodium = food_info.get("sodium", "N/A")
-            calories = food_info.get("calories", "N/A")
+        # ✅ Log the food information
+        await log_food_info(food_info)
 
-            response_text = (
-                f"อาหารนี้คือ: {food_name}\n"
-                f"คุณค่าทางโภชนาการโดยประมาณ:\n"
-                f"โปรตีน: {protein} กรัม\n"
-                f"คาร์โบไฮเดรต: {carb} กรัม\n"
-                f"ไขมัน: {fat} กรัม\n"
-                f"โซเดียม: {sodium} มิลลิกรัม\n"
-                f"แคลอรี่: {calories} กิโลแคลอรี่"
-            )
-        else:
-            response_text = str(food_info)
+        # ✅ Extract nutrition info safely
+        food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
+        protein = food_info.get("protein", "N/A")
+        carb = food_info.get("carbohydrate", "N/A")
+        fat = food_info.get("fat", "N/A")
+        sodium = food_info.get("sodium", "N/A")
+        calories = food_info.get("calories", "N/A")
+
+        response_text = (
+            f"อาหารนี้คือ: {food_name}\n"
+            f"คุณค่าทางโภชนาการโดยประมาณ:\n"
+            f"โปรตีน: {protein} กรัม\n"
+            f"คาร์โบไฮเดรต: {carb} กรัม\n"
+            f"ไขมัน: {fat} กรัม\n"
+            f"โซเดียม: {sodium} มิลลิกรัม\n"
+            f"แคลอรี่: {calories} กิโลแคลอรี่"
+        )
 
         # ✅ Send response
-        line_bot_api.reply_message(
+        await line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=response_text)
         )
@@ -205,10 +230,11 @@ def handle_image(event):
         # ✅ Log the error properly
         logging.error(json.dumps({"severity": "ERROR", "message": error_message}))
 
-        line_bot_api.reply_message(
+        await line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=error_message)
         )
+
 
 from typing import Dict, Any, Optional
 from fastapi import Form, Body
