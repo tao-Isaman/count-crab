@@ -24,7 +24,8 @@ from linebot.models import (
     MessageEvent, 
     TextMessage, 
     TextSendMessage, 
-    ImageMessage
+    ImageMessage,
+    QuickReply, QuickReplyButton, CameraAction, CameraRollAction
 )
 from linebot.models import FlexSendMessage
 
@@ -219,13 +220,19 @@ def handle_text_message(event: MessageEvent):
     """
     Simple text response prompting the user to send an image.
     """
-    line_bot_api.reply_message(
+    user_message = event.message.text.strip()
+    
+    if user_message == "บันทึกอาหาร":
+        send_quick_reply(event)
+    else:
+        line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=(
             "ส่งรูปอาหารมาให้ฉันได้เลยค่ะ "
             "ฉันจะบอกชื่ออาหารและคุณค่าทางโภชนาการให้"
         ))
     )
+        
 
 # ------------------------------------------------------------------------------
 # LINE ImageMessage Handler (Synchronous)
@@ -538,6 +545,27 @@ def create_flex_nutrition_message(food_info):
 
     return FlexSendMessage(alt_text="ข้อมูลโภชนาการ", contents={"type": "carousel", "contents": [flex_message]})
 
+def send_quick_reply(event):
+    """
+    Sends a Quick Reply when the user sends "บันทึกอาหาร".
+    The Quick Reply includes:
+    1. Open Camera (ถ่ายรูปอาหาร)
+    2. Open Camera Roll (อัพโหลดรูปอาหาร)
+    """
+
+    quick_reply_buttons = [
+        QuickReplyButton(action=CameraAction(label="📸 ถ่ายรูปอาหาร")),
+        QuickReplyButton(action=CameraRollAction(label="🖼 อัพโหลดรูปอาหาร"))
+    ]
+
+    quick_reply = QuickReply(items=quick_reply_buttons)
+
+    message = TextSendMessage(
+        text="กรุณาเลือกรูปแบบการเพิ่มรูปอาหารของคุณ 📷",
+        quick_reply=quick_reply
+    )
+
+    line_bot_api.reply_message(event.reply_token, message)
 
 
 # ------------------------------------------------------------------------------
