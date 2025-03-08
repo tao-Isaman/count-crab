@@ -160,46 +160,53 @@ def handle_message(event):
     )
 
 @handler.add(MessageEvent, message=ImageMessage)
-def handle_image(event):
+async def handle_image(event):
     message_content = line_bot_api.get_message_content(event.message.id)
     image_data = message_content.content
-    
-    try:
-        # Use OpenAI to classify the image
-        food_info = classify_with_openai(image_data)
 
-        log_food_info(food_info)
-        
-        # Check if it's food or not
-        # if "name" in food_info and "นี่ไม่ใช่รูปภาพอาหาร" in food_info["name"]:
-        #     response_text = food_info["name"]
-        # else:
-        #     # Format the nutrition information
-        #     food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
-        #     protein = food_info.get("protein", "N/A")
-        #     carb = food_info.get("carbohydrate", "N/A")
-        #     fat = food_info.get("fat", "N/A")
-        #     sodium = food_info.get("sodium", "N/A")
-        #     calories = food_info.get("calories", "N/A")
-            
-        #     response_text = (
-        #         f"อาหารนี้คือ: {food_name}\n"
-        #         f"คุณค่าทางโภชนาการโดยประมาณ:\n"
-        #         f"โปรตีน: {protein} กรัม\n"
-        #         f"คาร์โบไฮเดรต: {carb} กรัม\n"
-        #         f"ไขมัน: {fat} กรัม\n"
-        #         f"โซเดียม: {sodium} มิลลิกรัม\n"
-        #         f"แคลอรี่: {calories} กิโลแคลอรี่"
-        #     )
-        
-        line_bot_api.reply_message(
+    try:
+        # ✅ Use `await` to call async function
+        food_info = await classify_with_openai(image_data)
+
+        # ✅ Await logging function if it's async
+        await log_food_info(food_info)
+
+        # ✅ Ensure response is a string (convert dict to formatted text)
+        if isinstance(food_info, dict):
+            food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
+            protein = food_info.get("protein", "N/A")
+            carb = food_info.get("carbohydrate", "N/A")
+            fat = food_info.get("fat", "N/A")
+            sodium = food_info.get("sodium", "N/A")
+            calories = food_info.get("calories", "N/A")
+
+            response_text = (
+                f"อาหารนี้คือ: {food_name}\n"
+                f"คุณค่าทางโภชนาการโดยประมาณ:\n"
+                f"โปรตีน: {protein} กรัม\n"
+                f"คาร์โบไฮเดรต: {carb} กรัม\n"
+                f"ไขมัน: {fat} กรัม\n"
+                f"โซเดียม: {sodium} มิลลิกรัม\n"
+                f"แคลอรี่: {calories} กิโลแคลอรี่"
+            )
+        else:
+            response_text = str(food_info)
+
+        # ✅ Send response
+        await line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=food_info)
+            TextSendMessage(text=response_text)
         )
+
     except Exception as e:
-        line_bot_api.reply_message(
+        error_message = f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}"
+
+        # ✅ Log the error properly
+        logging.error(json.dumps({"severity": "ERROR", "message": error_message}))
+
+        await line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}")
+            TextSendMessage(text=error_message)
         )
 
 from typing import Dict, Any, Optional
