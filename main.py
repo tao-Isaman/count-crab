@@ -2,12 +2,22 @@ import os
 import requests
 import base64
 import json
+import logging
+import sys
 
 from fastapi import FastAPI, HTTPException, Request, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage
+
+# Use structured logging for Google Cloud
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
 
 app = FastAPI()
 
@@ -148,6 +158,8 @@ def handle_image(event):
     try:
         # Use OpenAI to classify the image
         food_info = classify_with_openai(image_data)
+
+        log_food_info(food_info)
         
         # Check if it's food or not
         # if "name" in food_info and "นี่ไม่ใช่รูปภาพอาหาร" in food_info["name"]:
