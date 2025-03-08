@@ -181,6 +181,121 @@ def handle_image(event):
             TextSendMessage(text=f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}")
         )
 
+from typing import Dict, Any, Optional
+from fastapi import Form, Body
+
+@app.post("/debug/send-nutrition")
+async def debug_send_nutrition(
+    user_id: str = Form(...),
+    food_name: str = Form(...),
+    protein: Optional[float] = Form(None),
+    carbohydrate: Optional[float] = Form(None),
+    fat: Optional[float] = Form(None),
+    sodium: Optional[float] = Form(None),
+    calories: Optional[float] = Form(None)
+):
+    """
+    Debug endpoint to directly send nutritional data to a Line user
+    without processing an image.
+    
+    This helps test the Line messaging API integration and formatting.
+    """
+    # Create a nutrition info dictionary similar to what classify_with_openai would return
+    nutrition_data = {
+        "name": food_name,
+        "protein": protein if protein is not None else "N/A",
+        "carbohydrate": carbohydrate if carbohydrate is not None else "N/A",
+        "fat": fat if fat is not None else "N/A",
+        "sodium": sodium if sodium is not None else "N/A",
+        "calories": calories if calories is not None else "N/A"
+    }
+    
+    try:
+        # Format the nutrition information
+        response_text = (
+            f"อาหารนี้คือ: {nutrition_data['name']}\n"
+            f"คุณค่าทางโภชนาการโดยประมาณ:\n"
+            f"โปรตีน: {nutrition_data['protein']} กรัม\n"
+            f"คาร์โบไฮเดรต: {nutrition_data['carbohydrate']} กรัม\n"
+            f"ไขมัน: {nutrition_data['fat']} กรัม\n"
+            f"โซเดียม: {nutrition_data['sodium']} มิลลิกรัม\n"
+            f"แคลอรี่: {nutrition_data['calories']} กิโลแคลอรี่"
+        )
+        
+        # Send a message to the specified user
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text=response_text)
+        )
+        
+        return {"status": "success", "message": "Nutrition data sent to Line user", "data": nutrition_data}
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error sending message to Line: {str(e)}"
+        )
+
+# Add a JSON body version of the endpoint for easier API testing
+@app.post("/debug/send-nutrition-json")
+async def debug_send_nutrition_json(
+    data: Dict[str, Any] = Body(...)
+):
+    """
+    Debug endpoint accepting JSON body to directly send nutritional data 
+    to a Line user without processing an image.
+    
+    Example JSON body:
+    {
+        "user_id": "U1234567890abcdef",
+        "food_name": "ผัดไทย",
+        "protein": 24,
+        "carbohydrate": 30,
+        "fat": 20,
+        "sodium": 10,
+        "calories": 20
+    }
+    """
+    user_id = data.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    # Create a nutrition info dictionary
+    nutrition_data = {
+        "name": data.get("food_name", "ไม่ระบุชื่ออาหาร"),
+        "protein": data.get("protein", "N/A"),
+        "carbohydrate": data.get("carbohydrate", "N/A"),
+        "fat": data.get("fat", "N/A"),
+        "sodium": data.get("sodium", "N/A"),
+        "calories": data.get("calories", "N/A")
+    }
+    
+    try:
+        # Format the nutrition information
+        response_text = (
+            f"อาหารนี้คือ: {nutrition_data['name']}\n"
+            f"คุณค่าทางโภชนาการโดยประมาณ:\n"
+            f"โปรตีน: {nutrition_data['protein']} กรัม\n"
+            f"คาร์โบไฮเดรต: {nutrition_data['carbohydrate']} กรัม\n"
+            f"ไขมัน: {nutrition_data['fat']} กรัม\n"
+            f"โซเดียม: {nutrition_data['sodium']} มิลลิกรัม\n"
+            f"แคลอรี่: {nutrition_data['calories']} กิโลแคลอรี่"
+        )
+        
+        # Send a message to the specified user
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text=response_text)
+        )
+        
+        return {"status": "success", "message": "Nutrition data sent to Line user", "data": nutrition_data}
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error sending message to Line: {str(e)}"
+        )
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8080))
