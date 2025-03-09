@@ -115,7 +115,7 @@ def respond_as_health_expert(user_message: str) -> str:
             {"role": "user", "content": user_message}
         ],
         "temperature": 0.8,
-        "max_tokens": 200,
+        "max_tokens": 2048,
         "top_p": 1,
         "frequency_penalty": 0,
         "presence_penalty": 0
