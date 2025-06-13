@@ -352,24 +352,6 @@ def handle_image_message(event: MessageEvent):
         # 4) Log the info
         log_food_info(food_info)
 
-        # # 5) Build response text
-        # food_name = food_info.get("name", "ไม่สามารถระบุชื่ออาหารได้")
-        # protein = food_info.get("protein", "N/A")
-        # carb = food_info.get("carbohydrate", "N/A")
-        # fat = food_info.get("fat", "N/A")
-        # sodium = food_info.get("sodium", "N/A")
-        # calories = food_info.get("calories", "N/A")
-
-        # response_text = (
-        #     f"อาหารนี้คือ: {food_name}\n"
-        #     f"คุณค่าทางโภชนาการโดยประมาณ:\n"
-        #     f"โปรตีน: {protein} กรัม\n"
-        #     f"คาร์โบไฮเดรต: {carb} กรัม\n"
-        #     f"ไขมัน: {fat} กรัม\n"
-        #     f"โซเดียม: {sodium} มิลลิกรัม\n"
-        #     f"แคลอรี่: {calories} กิโลแคลอรี่"
-        # )
-
         flex_message = create_flex_nutrition_message(food_info)
 
         # 6) Reply to user
