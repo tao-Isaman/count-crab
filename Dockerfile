@@ -20,7 +20,8 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 
 # Install the Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn
 
 # Copy the rest of the application code
 COPY . /app
@@ -29,4 +30,4 @@ COPY . /app
 EXPOSE 8080
 
 # Start the application with Gunicorn and Uvicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "0", "main:app"]
+CMD ["/usr/local/bin/gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "0", "main:app"]
