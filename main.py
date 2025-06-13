@@ -4,6 +4,7 @@ import requests
 import base64
 import json
 import logging
+from datetime import datetime
 
 from fastapi import (
     FastAPI, 
@@ -12,10 +13,12 @@ from fastapi import (
     File, 
     Form, 
     UploadFile, 
-    Body
+    Body,
+    Depends
 )
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, Optional
+from sqlalchemy.orm import Session
 
 # LINE Bot SDK imports
 from linebot import LineBotApi, WebhookHandler
@@ -25,9 +28,13 @@ from linebot.models import (
     TextMessage, 
     TextSendMessage, 
     ImageMessage,
-    QuickReply, QuickReplyButton, CameraAction, CameraRollAction
+    QuickReply, QuickReplyButton, CameraAction, CameraRollAction,
+    PostbackAction
 )
 from linebot.models import FlexSendMessage
+
+# Import database models
+from models import get_db, MealRecord
 
 # ------------------------------------------------------------------------------
 # Configure Logging (structured for Google Cloud, also works locally)
@@ -269,61 +276,86 @@ def classify_image(file: UploadFile = File(...)):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event: MessageEvent):
     """
-    Simple text response prompting the user to send an image.
+    Handles text messages and postback events.
     """
     user_message = event.message.text.strip()
     
-    if user_message == "บันทึกอาหาร":
+    if user_message == "กิน":
+        # Get the last food info from the database
+        db = next(get_db())
+        last_record = db.query(MealRecord).filter(
+            MealRecord.user_id == event.source.user_id
+        ).order_by(MealRecord.created_at.desc()).first()
+        
+        if last_record:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="บันทึกการกินอาหารเรียบร้อยแล้ว! 🎉")
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ไม่พบข้อมูลอาหารที่จะบันทึก กรุณาส่งรูปอาหารใหม่")
+            )
+    elif user_message == "ไม่กิน":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="ไม่บันทึกการกินอาหาร")
+        )
+    elif user_message == "บันทึกอาหาร":
         send_quick_reply(event)
     elif user_message == "ประวัติการกิน":
+        # Get user's meal history
+        db = next(get_db())
+        records = db.query(MealRecord).filter(
+            MealRecord.user_id == event.source.user_id
+        ).order_by(MealRecord.created_at.desc()).limit(5).all()
+        
+        if records:
+            history_text = "ประวัติการกินอาหารล่าสุด:\n\n"
+            for record in records:
+                history_text += f"📅 {record.created_at.strftime('%Y-%m-%d %H:%M')}\n"
+                history_text += f"🍽 {record.food_name}\n"
+                history_text += f"🔥 {record.calories} แคลอรี่\n"
+                history_text += "-------------------\n"
+        else:
+            history_text = "ยังไม่มีประวัติการกินอาหาร"
+            
         line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=(
-            "ขออภัยในความไม่สะดวก"
-            "ฟีเจอร์นี้อยู่ระหว่างการพัฒนาค่ะ"
-        ))
-    )
+            event.reply_token,
+            TextSendMessage(text=history_text)
+        )
     elif user_message == "วิธีการใช้งาน":
         line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=(
-            "📌 **วิธีการใช้งาน Meal Mate เพื่อวิเคราะห์สารอาหารจากรูปภาพ**\n\n"
-            "✨ **Meal Mate ของเราสามารถช่วยคุณวิเคราะห์คุณค่าทางโภชนาการของอาหารจากรูปภาพได้ง่าย ๆ!** ✨\n\n"
-            "🔹 **1️⃣ เริ่มต้นใช้งาน**\n"
-            "   - พิมพ์ **'บันทึกอาหาร'** หรือ กดที่ rich menu เพื่อเริ่มต้น\n"
-            "   - จากนั้น Meal Mate จะแสดง **ตัวเลือก Quick Reply**\n"
-            "     ✅ **📸 ถ่ายรูปอาหาร** → เปิดกล้องเพื่อถ่ายรูปอาหาร\n"
-            "     ✅ **🖼 อัพโหลดรูปอาหาร** → เลือกรูปจากแกลเลอรีของคุณ\n\n"
-            "🔹 **2️⃣ ถ่ายรูปอาหารหรืออัพโหลดภาพ**\n"
-            "   - เลือกรูปอาหารที่ต้องการวิเคราะห์\n"
-            "   - กดส่งรูปให้ Meal Mate\n\n"
-            "🔹 **3️⃣ รับข้อมูลโภชนาการ**\n"
-            "   - Meal Mate จะวิเคราะห์และตอบกลับพร้อมข้อมูลโภชนาการ เช่น:\n"
-            "     ✅ **ชื่ออาหาร**\n"
-            "     ✅ **โปรตีน (g)**\n"
-            "     ✅ **คาร์โบไฮเดรต (g)**\n"
-            "     ✅ **ไขมัน (g)**\n"
-            "     ✅ **โซเดียม (mg)**\n"
-            "     ✅ **แคลอรี่ (kcal)**\n\n"
-            "🔹 **4️⃣ คำถามที่พบบ่อย (FAQ)**\n"
-            "   ✅ **Q:** ต้องถ่ายรูปแบบไหนให้ได้ผลดีที่สุด?\n"
-            "   **A:** ควรใช้ภาพที่ชัดเจน เห็นอาหารเต็มจาน และไม่มีสิ่งรบกวนในภาพ\n\n"
-            "   ✅ **Q:** อาหารที่ไม่ใช่ไทยสามารถวิเคราะห์ได้ไหม?\n"
-            "   **A:** Meal Mate ของเราพัฒนาเพื่ออาหารไทยเป็นหลัก อาหารต่างประเทศอาจมีความคลาดเคลื่อนบ้าง\n\n"
-            "   ✅ **Q:** ข้อมูลโภชนาการแม่นยำแค่ไหน?\n"
-            "   **A:** ข้อมูลเป็น **การประมาณค่าโดย AI** และอาจมีความคลาดเคลื่อนได้\n\n"
-            "🚀 **ลองใช้งานเลย!**\n"
-            "1️⃣ พิมพ์ **'บันทึกอาหาร'**\n"
-            "2️⃣ เลือก **ถ่ายรูป** หรือ **อัพโหลดรูป**\n"
-            "3️⃣ รับ **ข้อมูลโภชนาการของอาหาร** ทันที! 😊"
-        ))
-    )
+            event.reply_token,
+            TextSendMessage(text=(
+                "📌 **วิธีการใช้งาน Meal Mate เพื่อวิเคราะห์สารอาหารจากรูปภาพ**\n\n"
+                "✨ **Meal Mate ของเราสามารถช่วยคุณวิเคราะห์คุณค่าทางโภชนาการของอาหารจากรูปภาพได้ง่าย ๆ!** ✨\n\n"
+                "🔹 **1️⃣ เริ่มต้นใช้งาน**\n"
+                "   - พิมพ์ **'บันทึกอาหาร'** หรือ กดที่ rich menu เพื่อเริ่มต้น\n"
+                "   - จากนั้น Meal Mate จะแสดง **ตัวเลือก Quick Reply**\n"
+                "     ✅ **📸 ถ่ายรูปอาหาร** → เปิดกล้องเพื่อถ่ายรูปอาหาร\n"
+                "     ✅ **🖼 อัพโหลดรูปอาหาร** → เลือกรูปจากแกลเลอรีของคุณ\n\n"
+                "🔹 **2️⃣ ถ่ายรูปอาหารหรืออัพโหลดภาพ**\n"
+                "   - เลือกรูปอาหารที่ต้องการวิเคราะห์\n"
+                "   - กดส่งรูปให้ Meal Mate\n\n"
+                "🔹 **3️⃣ รับข้อมูลโภชนาการ**\n"
+                "   - Meal Mate จะวิเคราะห์และตอบกลับพร้อมข้อมูลโภชนาการ\n"
+                "   - เลือก **กิน** หรือ **ไม่กิน** เพื่อบันทึกการกินอาหาร\n\n"
+                "🔹 **4️⃣ ดูประวัติการกิน**\n"
+                "   - พิมพ์ **'ประวัติการกิน'** เพื่อดูประวัติการกินอาหารล่าสุด\n\n"
+                "🚀 **ลองใช้งานเลย!**\n"
+                "1️⃣ พิมพ์ **'บันทึกอาหาร'**\n"
+                "2️⃣ เลือก **ถ่ายรูป** หรือ **อัพโหลดรูป**\n"
+                "3️⃣ รับ **ข้อมูลโภชนาการของอาหาร** ทันที! 😊"
+            ))
+        )
     else:
         expert_res = respond_as_health_expert(user_message)
         line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=expert_res))
-        
+            event.reply_token,
+            TextSendMessage(text=expert_res)
+        )
 
 # ------------------------------------------------------------------------------
 # LINE ImageMessage Handler (Synchronous)
@@ -354,11 +386,14 @@ def handle_image_message(event: MessageEvent):
 
         flex_message = create_flex_nutrition_message(food_info)
 
-        # 6) Reply to user
+        # 5) Reply to user with nutrition info
         line_bot_api.reply_message(
             event.reply_token,
             flex_message
         )
+
+        # 6) Send eat/not eat quick reply
+        send_eat_quick_reply(event, food_info)
 
     except Exception as e:
         error_message = f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}"
@@ -640,6 +675,75 @@ def send_quick_reply(event):
 
     line_bot_api.reply_message(event.reply_token, message)
 
+def send_eat_quick_reply(event, food_info):
+    """
+    Sends a Quick Reply asking if the user wants to eat the food.
+    """
+    quick_reply_buttons = [
+        QuickReplyButton(
+            action=PostbackAction(
+                label="กิน",
+                data=f"eat_{json.dumps(food_info)}"
+            )
+        ),
+        QuickReplyButton(
+            action=PostbackAction(
+                label="ไม่กิน",
+                data="not_eat"
+            )
+        )
+    ]
+
+    quick_reply = QuickReply(items=quick_reply_buttons)
+
+    message = TextSendMessage(
+        text="คุณต้องการบันทึกการกินอาหารนี้หรือไม่?",
+        quick_reply=quick_reply
+    )
+
+    line_bot_api.reply_message(event.reply_token, message)
+
+@handler.add(MessageEvent, message=TextMessage, postback=True)
+def handle_postback(event: MessageEvent):
+    """
+    Handles postback events from quick reply buttons.
+    """
+    if event.postback.data.startswith("eat_"):
+        try:
+            # Extract food info from postback data
+            food_info = json.loads(event.postback.data[4:])
+            
+            # Save to database
+            db = next(get_db())
+            meal_record = MealRecord(
+                user_id=event.source.user_id,
+                food_name=food_info.get("name", ""),
+                protein=food_info.get("protein", 0),
+                carbohydrate=food_info.get("carbohydrate", 0),
+                fat=food_info.get("fat", 0),
+                sodium=food_info.get("sodium", 0),
+                calories=food_info.get("calories", 0),
+                materials=food_info.get("materials", ""),
+                details=food_info.get("details", "")
+            )
+            db.add(meal_record)
+            db.commit()
+            
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="บันทึกการกินอาหารเรียบร้อยแล้ว! 🎉")
+            )
+        except Exception as e:
+            logging.error(f"Error saving meal record: {str(e)}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ขออภัย ไม่สามารถบันทึกข้อมูลได้")
+            )
+    elif event.postback.data == "not_eat":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="ไม่บันทึกการกินอาหาร")
+        )
 
 # ------------------------------------------------------------------------------
 # Uvicorn Entry Point (if running locally or Docker without Gunicorn)
