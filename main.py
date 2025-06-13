@@ -29,7 +29,7 @@ from linebot.models import (
     TextSendMessage, 
     ImageMessage,
     QuickReply, QuickReplyButton, CameraAction, CameraRollAction,
-    PostbackAction
+    PostbackAction, PostbackEvent
 )
 from linebot.models import FlexSendMessage
 
@@ -703,8 +703,8 @@ def send_eat_quick_reply(event, food_info):
 
     line_bot_api.reply_message(event.reply_token, message)
 
-@handler.add(MessageEvent, message=TextMessage, postback=True)
-def handle_postback(event: MessageEvent):
+@handler.add(PostbackEvent)
+def handle_postback(event: PostbackEvent):
     """
     Handles postback events from quick reply buttons.
     """
