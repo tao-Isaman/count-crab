@@ -24,4 +24,3 @@ urllib3==1.26.15
 uvicorn==0.22.0
 yarl==1.9.2
 SQLAlchemy==2.0.41
-typing_extensions==4.14.0
