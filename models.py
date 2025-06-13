@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
+import logging
 
 # Database URL
 DATABASE_URL = "postgresql://suratech:suratech123@34.124.152.10:5433/meal_mate"
@@ -27,8 +28,11 @@ class MealRecord(Base):
     details = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Create tables if they don't exist
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logging.warning(f"Tables might already exist: {str(e)}")
 
 def get_db():
     db = SessionLocal()
