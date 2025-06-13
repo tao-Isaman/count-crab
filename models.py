@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # Database URL
-DATABASE_URL = "postgres://suratech:suratech123@34.124.152.10:5433/meal_mate"
+DATABASE_URL = "postgresql://suratech:suratech123@34.124.152.10:5433/meal_mate"
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
