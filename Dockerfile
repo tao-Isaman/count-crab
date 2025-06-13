@@ -29,4 +29,4 @@ COPY . /app
 EXPOSE 8080
 
 # Start the application with Gunicorn and Uvicorn
-CMD exec gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0 main:app
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "0", "main:app"]
