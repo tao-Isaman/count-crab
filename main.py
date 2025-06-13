@@ -280,7 +280,7 @@ def handle_text_message(event: MessageEvent):
     """
     user_message = event.message.text.strip()
     
-    if user_message == "กิน":
+    if user_message.startswith("eat_"):
         # Get the last food info from the database
         db = next(get_db())
         last_record = db.query(MealRecord).filter(
@@ -391,9 +391,6 @@ def handle_image_message(event: MessageEvent):
             event.reply_token,
             flex_message
         )
-
-        # 6) Send eat/not eat quick reply
-        send_eat_quick_reply(event, food_info)
 
     except Exception as e:
         error_message = f"ขออภัย ไม่สามารถวิเคราะห์ภาพได้: {str(e)}"
@@ -642,9 +639,19 @@ def create_flex_nutrition_message(food_info):
                     "style": "primary",
                     "color": "#1DB446",
                     "action": {
-                        "type": "uri",
-                        "label": "แนะนำอาหารที่คล้ายกัน",
-                        "uri": "https://example.com/edit"
+                        "type": "postback",
+                        "label": "กิน",
+                        "data": f"eat_{json.dumps(food_info)}"
+                    }
+                },
+                {
+                    "type": "button",
+                    "style": "secondary",
+                    "color": "#FF6B6E",
+                    "action": {
+                        "type": "postback",
+                        "label": "ไม่กิน",
+                        "data": "not_eat"
                     }
                 }
             ]
