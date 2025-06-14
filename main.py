@@ -29,7 +29,7 @@ from linebot.models import (
     TextSendMessage, 
     ImageMessage,
     QuickReply, QuickReplyButton, CameraAction, CameraRollAction,
-    PostbackAction, PostbackEvent
+    PostbackAction, PostbackEvent, LocationAction, LocationMessage
 )
 from linebot.models import FlexSendMessage
 
@@ -719,22 +719,7 @@ def handle_postback(event: PostbackEvent):
             # Extract food info from postback data
             food_info = json.loads(event.postback.data[4:])
             
-            # Get user's location if available
-            latitude = None
-            longitude = None
-            location_name = None
-            
-            if hasattr(event, 'source') and hasattr(event.source, 'user_id'):
-                try:
-                    profile = line_bot_api.get_profile(event.source.user_id)
-                    if hasattr(profile, 'location'):
-                        latitude = profile.location.latitude
-                        longitude = profile.location.longitude
-                        location_name = profile.location.name
-                except Exception as e:
-                    logging.error(f"Error getting user location: {str(e)}")
-            
-            # Save to database
+            # Save to database first without location
             db = next(get_db())
             meal_record = MealRecord(
                 user_id=event.source.user_id,
@@ -745,28 +730,108 @@ def handle_postback(event: PostbackEvent):
                 sodium=food_info.get("s", 0),  # sodium
                 calories=food_info.get("k", 0),  # calories
                 materials="",  # materials not included in postback data
-                details="",  # details not included in postback data
-                latitude=latitude,
-                longitude=longitude,
-                location_name=location_name
+                details=""  # details not included in postback data
             )
             db.add(meal_record)
             db.commit()
             
+            # Send confirmation message
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="บันทึกการกินอาหารเรียบร้อยแล้ว! 🎉")
             )
+            
+            # Send location request with quick reply
+            quick_reply_buttons = [
+                QuickReplyButton(
+                    action=PostbackAction(
+                        label="ส่งตำแหน่งที่อยู่",
+                        data=f"location_{meal_record.id}"
+                    )
+                )
+            ]
+            
+            quick_reply = QuickReply(items=quick_reply_buttons)
+            
+            location_message = TextSendMessage(
+                text="คุณต้องการบันทึกตำแหน่งที่อยู่ด้วยไหม? 📍",
+                quick_reply=quick_reply
+            )
+            
+            line_bot_api.push_message(
+                event.source.user_id,
+                location_message
+            )
+            
         except Exception as e:
             logging.error(f"Error saving meal record: {str(e)}")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="ขออภัย ไม่สามารถบันทึกข้อมูลได้")
             )
-    elif event.postback.data == "not_eat":
+    elif event.postback.data.startswith("location_"):
+        try:
+            # Extract meal record ID from postback data
+            meal_id = int(event.postback.data.split("_")[1])
+            
+            # Send location request message
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(
+                    text="กรุณาส่งตำแหน่งที่อยู่ของคุณ 📍",
+                    quick_reply=QuickReply(
+                        items=[
+                            QuickReplyButton(
+                                action=LocationAction(label="ส่งตำแหน่งที่อยู่")
+                            )
+                        ]
+                    )
+                )
+            )
+        except Exception as e:
+            logging.error(f"Error requesting location: {str(e)}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ขออภัย ไม่สามารถขอตำแหน่งที่อยู่ได้")
+            )
+
+# ------------------------------------------------------------------------------
+# LINE LocationMessage Handler
+# ------------------------------------------------------------------------------
+@handler.add(MessageEvent, message=LocationMessage)
+def handle_location_message(event: MessageEvent):
+    """
+    Handles location messages and updates the latest meal record with location information.
+    """
+    try:
+        # Get the latest meal record for this user
+        db = next(get_db())
+        meal_record = db.query(MealRecord).filter(
+            MealRecord.user_id == event.source.user_id
+        ).order_by(MealRecord.created_at.desc()).first()
+        
+        if meal_record:
+            # Update the meal record with location information
+            meal_record.latitude = event.message.latitude
+            meal_record.longitude = event.message.longitude
+            meal_record.location_name = event.message.address if hasattr(event.message, 'address') else None
+            
+            db.commit()
+            
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="บันทึกตำแหน่งที่อยู่เรียบร้อยแล้ว! 📍")
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ไม่พบข้อมูลการกินอาหารที่จะบันทึกตำแหน่ง")
+            )
+    except Exception as e:
+        logging.error(f"Error saving location: {str(e)}")
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="ไม่บันทึกการกินอาหาร")
+            TextSendMessage(text="ขออภัย ไม่สามารถบันทึกตำแหน่งที่อยู่ได้")
         )
 
 # ------------------------------------------------------------------------------
