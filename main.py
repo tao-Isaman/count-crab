@@ -312,19 +312,123 @@ def handle_text_message(event: MessageEvent):
         ).order_by(MealRecord.created_at.desc()).limit(5).all()
         
         if records:
-            history_text = "ประวัติการกินอาหารล่าสุด:\n\n"
+            # Create a carousel of bubbles for each meal record
+            contents = []
             for record in records:
-                history_text += f"📅 {record.created_at.strftime('%Y-%m-%d %H:%M')}\n"
-                history_text += f"🍽 {record.food_name}\n"
-                history_text += f"🔥 {record.calories} แคลอรี่\n"
-                history_text += "-------------------\n"
-        else:
-            history_text = "ยังไม่มีประวัติการกินอาหาร"
+                # Format the date and time
+                date_str = record.created_at.strftime('%d %b %Y')
+                time_str = record.created_at.strftime('%H:%M')
+                
+                # Create location text
+                location_text = "📍 ไม่มีข้อมูลตำแหน่ง"
+                if record.location_name:
+                    location_text = f"📍 {record.location_name}"
+                elif record.latitude and record.longitude:
+                    location_text = f"📍 {record.latitude:.4f}, {record.longitude:.4f}"
+                
+                # Create a bubble for each meal record
+                bubble = {
+                    "type": "bubble",
+                    "size": "mega",
+                    "header": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": record.food_name,
+                                "weight": "bold",
+                                "size": "xl",
+                                "color": "#ffffff"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"{date_str} {time_str}",
+                                "color": "#ffffff",
+                                "size": "sm"
+                            }
+                        ],
+                        "backgroundColor": "#27AE60",
+                        "paddingAll": "20px"
+                    },
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "box",
+                                        "layout": "baseline",
+                                        "spacing": "sm",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": "🔥",
+                                                "flex": 1,
+                                                "size": "xl"
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": f"{record.calories} แคลอรี่",
+                                                "flex": 4,
+                                                "size": "xl",
+                                                "color": "#666666",
+                                                "weight": "bold"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "separator",
+                                "margin": "xxl"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "margin": "xxl",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": location_text,
+                                        "size": "sm",
+                                        "color": "#666666",
+                                        "wrap": True
+                                    }
+                                ]
+                            }
+                        ],
+                        "paddingAll": "20px"
+                    },
+                    "styles": {
+                        "footer": {
+                            "separator": True
+                        }
+                    }
+                }
+                contents.append(bubble)
             
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=history_text)
-        )
+            # Create the carousel
+            carousel = {
+                "type": "carousel",
+                "contents": contents
+            }
+            
+            # Send the flex message
+            line_bot_api.reply_message(
+                event.reply_token,
+                FlexSendMessage(alt_text="ประวัติการกินอาหาร", contents=carousel)
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ยังไม่มีประวัติการกินอาหาร")
+            )
     elif user_message == "วิธีการใช้งาน":
         line_bot_api.reply_message(
             event.reply_token,
