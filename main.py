@@ -578,7 +578,7 @@ def handle_text_message(event: MessageEvent):
         )
 
 # ------------------------------------------------------------------------------
-# LINE ImageMessage Handler (Synchronous)
+# LINE ImageMessage Handler
 # ------------------------------------------------------------------------------
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event: MessageEvent):
@@ -586,6 +586,9 @@ def handle_image_message(event: MessageEvent):
     Handles an incoming image message: calls OpenAI to classify, logs info, and responds.
     """
     try:
+        # Start loading animation
+        start_loading_animation(event.source.user_id)
+
         # 1) Download the image data
         message_content = line_bot_api.get_message_content(event.message.id)
         image_data = message_content.content
@@ -932,6 +935,7 @@ def handle_postback(event: PostbackEvent):
     """
     if event.postback.data.startswith("eat_"):
         try:
+            start_loading_animation(event.source.user_id)
             # Extract food info from postback data
             food_info = json.loads(event.postback.data[4:])
             
@@ -987,6 +991,7 @@ def handle_postback(event: PostbackEvent):
             )
     elif event.postback.data.startswith("location_"):
         try:
+            start_loading_animation(event.source.user_id)
             # Extract meal record ID from postback data
             meal_id = int(event.postback.data.split("_")[1])
             
@@ -1020,6 +1025,7 @@ def handle_location_message(event: MessageEvent):
     Handles location messages and updates the latest meal record with location information.
     """
     try:
+        start_loading_animation(event.source.user_id)
         # Get the latest meal record for this user
         db = next(get_db())
         meal_record = db.query(MealRecord).filter(
@@ -1063,3 +1069,25 @@ if __name__ == "__main__":
         log_level="info",
         timeout_keep_alive=0
     )
+
+def start_loading_animation(user_id):
+    """
+    Starts the LINE Loading Animation for a specific user.
+    The animation will automatically disappear after a certain time.
+    """
+    url = "https://api.line.me/v2/bot/chat/loading/start"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    data = {
+        "chatId": user_id
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logging.error(f"Error starting loading animation: {str(e)}")
+        return False
