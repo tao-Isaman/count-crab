@@ -508,6 +508,17 @@ def create_flex_nutrition_message(food_info):
     :param food_info: Dictionary containing food details.
     :return: FlexSendMessage object
     """
+    # Create a shorter version of food_info for postback data
+    short_food_info = {
+        "n": food_info.get("name", ""),  # name
+        "p": food_info.get("protein", 0),  # protein
+        "c": food_info.get("carbohydrate", 0),  # carbohydrate
+        "f": food_info.get("fat", 0),  # fat
+        "s": food_info.get("sodium", 0),  # sodium
+        "k": food_info.get("calories", 0),  # calories
+        "m": food_info.get("materials", "")[:50],  # materials (truncated)
+        "d": food_info.get("details", "")[:100]  # details (truncated)
+    }
 
     flex_message = {
         "type": "bubble",
@@ -641,7 +652,7 @@ def create_flex_nutrition_message(food_info):
                     "action": {
                         "type": "postback",
                         "label": "กิน",
-                        "data": f"eat_{json.dumps(food_info)}"
+                        "data": f"eat_{json.dumps(short_food_info)}"
                     }
                 },
                 {
@@ -724,14 +735,14 @@ def handle_postback(event: PostbackEvent):
             db = next(get_db())
             meal_record = MealRecord(
                 user_id=event.source.user_id,
-                food_name=food_info.get("name", ""),
-                protein=food_info.get("protein", 0),
-                carbohydrate=food_info.get("carbohydrate", 0),
-                fat=food_info.get("fat", 0),
-                sodium=food_info.get("sodium", 0),
-                calories=food_info.get("calories", 0),
-                materials=food_info.get("materials", ""),
-                details=food_info.get("details", "")
+                food_name=food_info.get("n", ""),  # name
+                protein=food_info.get("p", 0),  # protein
+                carbohydrate=food_info.get("c", 0),  # carbohydrate
+                fat=food_info.get("f", 0),  # fat
+                sodium=food_info.get("s", 0),  # sodium
+                calories=food_info.get("k", 0),  # calories
+                materials=food_info.get("m", ""),  # materials
+                details=food_info.get("d", "")  # details
             )
             db.add(meal_record)
             db.commit()
