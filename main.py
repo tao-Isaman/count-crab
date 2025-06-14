@@ -201,6 +201,7 @@ def classify_with_openai(image_data: bytes) -> dict:
                             "in JSON format. for food image, return the JSON object containing the food name, protein, carb, fat, sodium, calories, materials, details\n\n"
                             "## JSON Example for food\n"
                             "{\n"
+                            '"is_food": true,\n'
                             '"name": "ผัดไทย",\n'
                             '"protein": 24,\n'
                             '"carbohydrate": 30,\n'
