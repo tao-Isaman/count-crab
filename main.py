@@ -508,16 +508,14 @@ def create_flex_nutrition_message(food_info):
     :param food_info: Dictionary containing food details.
     :return: FlexSendMessage object
     """
-    # Create a shorter version of food_info for postback data
-    short_food_info = {
+    # Create a minimal version of food_info for postback data with only essential nutritional data
+    minimal_food_info = {
         "n": food_info.get("name", ""),  # name
         "p": food_info.get("protein", 0),  # protein
         "c": food_info.get("carbohydrate", 0),  # carbohydrate
         "f": food_info.get("fat", 0),  # fat
         "s": food_info.get("sodium", 0),  # sodium
-        "k": food_info.get("calories", 0),  # calories
-        "m": food_info.get("materials", "")[:50],  # materials (truncated)
-        "d": food_info.get("details", "")[:100]  # details (truncated)
+        "k": food_info.get("calories", 0)  # calories
     }
 
     flex_message = {
@@ -652,7 +650,7 @@ def create_flex_nutrition_message(food_info):
                     "action": {
                         "type": "postback",
                         "label": "กิน",
-                        "data": f"eat_{json.dumps(short_food_info)}"
+                        "data": f"eat_{json.dumps(minimal_food_info)}"
                     }
                 },
                 {
@@ -741,8 +739,8 @@ def handle_postback(event: PostbackEvent):
                 fat=food_info.get("f", 0),  # fat
                 sodium=food_info.get("s", 0),  # sodium
                 calories=food_info.get("k", 0),  # calories
-                materials=food_info.get("m", ""),  # materials
-                details=food_info.get("d", "")  # details
+                materials="",  # materials not included in postback data
+                details=""  # details not included in postback data
             )
             db.add(meal_record)
             db.commit()
