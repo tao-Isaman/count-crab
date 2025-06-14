@@ -26,6 +26,9 @@ class MealRecord(Base):
     calories = Column(Float)
     materials = Column(Text)
     details = Column(Text)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    location_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 # Create tables if they don't exist

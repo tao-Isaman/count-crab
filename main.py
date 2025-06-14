@@ -649,18 +649,8 @@ def create_flex_nutrition_message(food_info):
                     "color": "#1DB446",
                     "action": {
                         "type": "postback",
-                        "label": "กิน",
+                        "label": "บันทึกการกิน",
                         "data": f"eat_{json.dumps(minimal_food_info)}"
-                    }
-                },
-                {
-                    "type": "button",
-                    "style": "secondary",
-                    "color": "#FF6B6E",
-                    "action": {
-                        "type": "postback",
-                        "label": "ไม่กิน",
-                        "data": "not_eat"
                     }
                 }
             ]
@@ -729,6 +719,21 @@ def handle_postback(event: PostbackEvent):
             # Extract food info from postback data
             food_info = json.loads(event.postback.data[4:])
             
+            # Get user's location if available
+            latitude = None
+            longitude = None
+            location_name = None
+            
+            if hasattr(event, 'source') and hasattr(event.source, 'user_id'):
+                try:
+                    profile = line_bot_api.get_profile(event.source.user_id)
+                    if hasattr(profile, 'location'):
+                        latitude = profile.location.latitude
+                        longitude = profile.location.longitude
+                        location_name = profile.location.name
+                except Exception as e:
+                    logging.error(f"Error getting user location: {str(e)}")
+            
             # Save to database
             db = next(get_db())
             meal_record = MealRecord(
@@ -740,7 +745,10 @@ def handle_postback(event: PostbackEvent):
                 sodium=food_info.get("s", 0),  # sodium
                 calories=food_info.get("k", 0),  # calories
                 materials="",  # materials not included in postback data
-                details=""  # details not included in postback data
+                details="",  # details not included in postback data
+                latitude=latitude,
+                longitude=longitude,
+                location_name=location_name
             )
             db.add(meal_record)
             db.commit()
