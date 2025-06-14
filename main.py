@@ -159,7 +159,7 @@ def classify_with_openai(image_data: bytes) -> dict:
 
     # Prepare the payload
     payload = {
-        "model": "gpt-4o",  # Example model name, adjust to your usage
+        "model": "gpt-4o",
         "messages": [
             {
                 "role": "system",
@@ -167,12 +167,22 @@ def classify_with_openai(image_data: bytes) -> dict:
                     {
                         "type": "text",
                         "text": (
-                            "You are an image classification machine. I will give you a Thai food image; "
+                            "You are an image classification machine. I will give you a Thai food or any Food image; "
                             "you will answer the name of the food.\n"
-                            'If it is not a food image, respond with "นี่ไม่ใช่รูปภาพอาหารค่ะ".\n'
                             "Also return an estimate of nutrition (protein, carb, fat, sodium, calories, materials, details)"
                             "materials is meal core materials of food. details is mean advice message about food is field are need long message"
-                            "in JSON format.\n\n"
+                            'If it is not a food image, respond with a JSON object containing:\n'
+                            '1. "is_food": false\n'
+                            '2. "category": one of ["face", "animal", "landscape", "object", "other"]\n'
+                            '3. "message": a fun, friendly message in Thai about what you see\n\n'
+                            'Example responses:\n'
+                            'For food: {"is_food": true, "name": "ผัดไทย", ...}\n'
+                            'For face: {"is_food": false, "category": "face", "message": "นี่คือหน้าของคุณหรือเปล่า คุณหน้าตาดีไม่น้อยเลยนะ! 😊"}\n'
+                            'For animal: {"is_food": false, "category": "animal", "message": "ว้าว! น้องหมาน่ารักมากเลย คุณเลี้ยงเองหรือเปล่า? 🐕"}\n'
+                            'For landscape: {"is_food": false, "category": "landscape", "message": "วิวสวยมากเลย! อยากไปเที่ยวที่นี่บ้างจัง 🌅"}\n'
+                            'For object: {"is_food": false, "category": "object", "message": "ของชิ้นนี้ดูมีประโยชน์มากเลย! เอาไว้ทำอะไรกันเหรอ? 🤔"}\n'
+                            'For other: {"is_food": false, "category": "other", "message": "อืม... ดูเหมือนจะไม่ใช่รูปอาหารนะ แต่น่าสนใจดี! 😊"}\n'
+                            "in JSON format. for food image, return the JSON object containing the food name, protein, carb, fat, sodium, calories, materials, details\n\n"
                             "## JSON Example\n"
                             "{\n"
                             '"name": "ผัดไทย",\n'
@@ -231,13 +241,91 @@ def classify_with_openai(image_data: bytes) -> dict:
 
         if start_idx != -1 and end_idx > start_idx:
             json_str = content[start_idx:end_idx]
-            food_info = json.loads(json_str)
-            return food_info
+            response_data = json.loads(json_str)
+            return response_data
         else:
             # If no recognizable JSON found
-            return {"name": content, "message": "No structured nutrition data available"}
+            return {"is_food": False, "category": "other", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้"}
     except json.JSONDecodeError:
-        return {"name": content, "message": "Could not parse nutrition data"}
+        return {"is_food": False, "category": "other", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้"}
+
+def create_non_food_flex_message(response_data):
+    """
+    Creates a Flex Message for non-food images with fun responses.
+    """
+    category_colors = {
+        "face": "#FF6B6B",      # Warm pink
+        "animal": "#4ECDC4",    # Turquoise
+        "landscape": "#45B7D1",  # Sky blue
+        "object": "#96CEB4",    # Sage green
+        "other": "#FFD93D"      # Yellow
+    }
+    
+    category_icons = {
+        "face": "👤",
+        "animal": "🐾",
+        "landscape": "🌅",
+        "object": "🔍",
+        "other": "✨"
+    }
+    
+    color = category_colors.get(response_data.get("category", "other"), "#FFD93D")
+    icon = category_icons.get(response_data.get("category", "other"), "✨")
+    
+    bubble = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"{icon} วิเคราะห์ภาพ",
+                    "weight": "bold",
+                    "size": "xl",
+                    "color": "#ffffff"
+                }
+            ],
+            "backgroundColor": color,
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": response_data.get("message", "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้"),
+                    "size": "lg",
+                    "wrap": True,
+                    "color": "#666666"
+                },
+                {
+                    "type": "separator",
+                    "margin": "xxl"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "xxl",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "ลองส่งรูปอาหารมาให้วิเคราะห์กันเถอะ! 🍽️",
+                            "size": "sm",
+                            "color": "#666666",
+                            "wrap": True
+                        }
+                    ]
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+    
+    return FlexSendMessage(alt_text="ผลการวิเคราะห์ภาพ", contents=bubble)
 
 # ------------------------------------------------------------------------------
 # LINE Webhook Endpoint
@@ -479,22 +567,18 @@ def handle_image_message(event: MessageEvent):
         image_data = message_content.content
 
         # 2) Classify the image (synchronously)
-        food_info = classify_with_openai(image_data)
+        response_data = classify_with_openai(image_data)
 
-        # 3) If `food_info` is still a JSON string, parse it
-        if isinstance(food_info, str):
-            try:
-                food_info = json.loads(food_info)
-            except json.JSONDecodeError:
-                logging.error("Error: food_info is not a valid JSON string")
-                food_info = {"name": "ไม่สามารถระบุชื่ออาหารได้"}
+        # 3) Log the info
+        log_food_info(response_data)
 
-        # 4) Log the info
-        log_food_info(food_info)
+        # 4) Create appropriate response based on whether it's food or not
+        if response_data.get("is_food", False):
+            flex_message = create_flex_nutrition_message(response_data)
+        else:
+            flex_message = create_non_food_flex_message(response_data)
 
-        flex_message = create_flex_nutrition_message(food_info)
-
-        # 5) Reply to user with nutrition info
+        # 5) Reply to user
         line_bot_api.reply_message(
             event.reply_token,
             flex_message
