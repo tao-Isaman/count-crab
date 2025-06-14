@@ -174,16 +174,32 @@ def classify_with_openai(image_data: bytes) -> dict:
                             'If it is not a food image, respond with a JSON object containing:\n'
                             '1. "is_food": false\n'
                             '2. "category": one of ["face", "animal", "landscape", "object", "other"]\n'
-                            '3. "message": a fun, friendly message in Thai about what you see\n\n'
-                            'Example responses:\n'
-                            'For food: {"is_food": true, "name": "ผัดไทย", ...}\n'
-                            'For face: {"is_food": false, "category": "face", "message": "นี่คือหน้าของคุณหรือเปล่า คุณหน้าตาดีไม่น้อยเลยนะ! 😊"}\n'
-                            'For animal: {"is_food": false, "category": "animal", "message": "ว้าว! น้องหมาน่ารักมากเลย คุณเลี้ยงเองหรือเปล่า? 🐕"}\n'
-                            'For landscape: {"is_food": false, "category": "landscape", "message": "วิวสวยมากเลย! อยากไปเที่ยวที่นี่บ้างจัง 🌅"}\n'
-                            'For object: {"is_food": false, "category": "object", "message": "ของชิ้นนี้ดูมีประโยชน์มากเลย! เอาไว้ทำอะไรกันเหรอ? 🤔"}\n'
-                            'For other: {"is_food": false, "category": "other", "message": "อืม... ดูเหมือนจะไม่ใช่รูปอาหารนะ แต่น่าสนใจดี! 😊"}\n'
+                            '3. "subcategory": more specific category (examples below)\n'
+                            '4. "message": a fun, friendly message in Thai about what you see\n'
+                            '5. "emoji": relevant emoji for the image\n\n'
+                            'Example responses for non-food images [system can tell more subcategory and message not specific only system can tell]:\n'
+                            'For face:\n'
+                            '{"is_food": false, "category": "face", "subcategory": "selfie", "message": "นี่คือหน้าของคุณหรือเปล่า คุณหน้าตาดีไม่น้อยเลยนะ! 😊", "emoji": "👤"}\n'
+                            '{"is_food": false, "category": "face", "subcategory": "group", "message": "ว้าว! ดูเหมือนจะเป็นรูปหมู่กับเพื่อนๆ นะ ดูสนุกมากเลย! 👥", "emoji": "👥"}\n'
+                            '{"is_food": false, "category": "face", "subcategory": "baby", "message": "เด็กน้อยน่ารักมากเลย! ดูเหมือนจะยิ้มแย้มแจ่มใสมากๆ 👶", "emoji": "👶"}\n\n'
+                            'For animal:\n'
+                            '{"is_food": false, "category": "animal", "subcategory": "dog", "message": "น้องหมาสุดน่ารัก! ดูเหมือนจะรักเจ้าของมากเลยนะ 🐕", "emoji": "🐕"}\n'
+                            '{"is_food": false, "category": "animal", "subcategory": "cat", "message": "เจ้าเหมียวสุดน่ารัก! ดูเหมือนจะกำลังผ่อนคลายอยู่เลย 🐱", "emoji": "🐱"}\n'
+                            '{"is_food": false, "category": "animal", "subcategory": "wild", "message": "สัตว์ป่าที่น่าสนใจมาก! ดูเหมือนจะอยู่ในธรรมชาติที่สวยงาม 🦁", "emoji": "🦁"}\n\n'
+                            'For landscape:\n'
+                            '{"is_food": false, "category": "landscape", "subcategory": "beach", "message": "ชายหาดสวยมากเลย! อยากไปนอนเล่นทรายบ้างจัง 🌊", "emoji": "🌊"}\n'
+                            '{"is_food": false, "category": "landscape", "subcategory": "mountain", "message": "วิวภูเขาสวยมาก! ดูเหมือนจะเหมาะกับการปีนเขามากๆ 🏔️", "emoji": "🏔️"}\n'
+                            '{"is_food": false, "category": "landscape", "subcategory": "city", "message": "วิวเมืองสวยมากเลย! ดูเหมือนจะเป็นที่เที่ยวที่น่าสนใจมาก 🏙️", "emoji": "🏙️"}\n\n'
+                            'For object:\n'
+                            '{"is_food": false, "category": "object", "subcategory": "vehicle", "message": "รถสวยมากเลย! ดูเหมือนจะดูแลรักษาดีมาก 🚗", "emoji": "🚗"}\n'
+                            '{"is_food": false, "category": "object", "subcategory": "gadget", "message": "อุปกรณ์อิเล็กทรอนิกส์สุดทันสมัย! ดูเหมือนจะใช้งานได้ดีมาก 📱", "emoji": "📱"}\n'
+                            '{"is_food": false, "category": "object", "subcategory": "furniture", "message": "เฟอร์นิเจอร์สวยมาก! ดูเหมือนจะทำให้บ้านน่าอยู่ขึ้นเยอะเลย 🪑", "emoji": "🪑"}\n\n'
+                            'For other:\n'
+                            '{"is_food": false, "category": "other", "subcategory": "art", "message": "ผลงานศิลปะสวยมาก! ดูเหมือนจะมีความคิดสร้างสรรค์สูงมาก 🎨", "emoji": "🎨"}\n'
+                            '{"is_food": false, "category": "other", "subcategory": "text", "message": "ข้อความที่เขียนไว้ดูน่าสนใจมาก! อยากรู้ว่ามีความหมายอะไรบ้าง 📝", "emoji": "📝"}\n'
+                            '{"is_food": false, "category": "other", "subcategory": "unknown", "message": "อืม... ดูเหมือนจะไม่ใช่รูปอาหารนะ แต่น่าสนใจดี! 😊", "emoji": "✨"}\n\n'
                             "in JSON format. for food image, return the JSON object containing the food name, protein, carb, fat, sodium, calories, materials, details\n\n"
-                            "## JSON Example\n"
+                            "## JSON Example for food\n"
                             "{\n"
                             '"name": "ผัดไทย",\n'
                             '"protein": 24,\n'
@@ -245,9 +261,9 @@ def classify_with_openai(image_data: bytes) -> dict:
             return response_data
         else:
             # If no recognizable JSON found
-            return {"is_food": False, "category": "other", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้"}
+            return {"is_food": False, "category": "other", "subcategory": "unknown", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้", "emoji": "❓"}
     except json.JSONDecodeError:
-        return {"is_food": False, "category": "other", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้"}
+        return {"is_food": False, "category": "other", "subcategory": "unknown", "message": "ขออภัยค่ะ ไม่สามารถวิเคราะห์ภาพได้", "emoji": "❓"}
 
 def create_non_food_flex_message(response_data):
     """
@@ -261,6 +277,7 @@ def create_non_food_flex_message(response_data):
         "other": "#FFD93D"      # Yellow
     }
     
+    # Use the emoji from the response data, or fallback to category icons
     category_icons = {
         "face": "👤",
         "animal": "🐾",
@@ -270,7 +287,7 @@ def create_non_food_flex_message(response_data):
     }
     
     color = category_colors.get(response_data.get("category", "other"), "#FFD93D")
-    icon = category_icons.get(response_data.get("category", "other"), "✨")
+    emoji = response_data.get("emoji", category_icons.get(response_data.get("category", "other"), "✨"))
     
     bubble = {
         "type": "bubble",
@@ -281,10 +298,17 @@ def create_non_food_flex_message(response_data):
             "contents": [
                 {
                     "type": "text",
-                    "text": f"{icon} วิเคราะห์ภาพ",
+                    "text": f"{emoji} วิเคราะห์ภาพ",
                     "weight": "bold",
                     "size": "xl",
                     "color": "#ffffff"
+                },
+                {
+                    "type": "text",
+                    "text": f"ประเภท: {response_data.get('subcategory', 'ไม่ระบุ')}",
+                    "color": "#ffffff",
+                    "size": "sm",
+                    "margin": "sm"
                 }
             ],
             "backgroundColor": color,
