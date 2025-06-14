@@ -28,5 +28,5 @@ COPY . /app
 # Expose the port the app runs on
 EXPOSE 8080
 
-# Start the application with Gunicorn and Uvicorn
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8080", "--log-level", "info"]
+# Start the application with migrations
+CMD python migrations/init_db.py && gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8080 --log-level info
