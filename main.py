@@ -395,6 +395,7 @@ def handle_text_message(event: MessageEvent):
     """
     Handles text messages and postback events.
     """
+    start_loading_animation(event.source.user_id)
     user_message = event.message.text.strip()
     
     if user_message.startswith("eat_"):
