@@ -6,7 +6,7 @@ import os
 import logging
 
 # Database URL
-DATABASE_URL = "postgresql://suratech:suratech123@34.124.152.10:5433/meal_mate"
+DATABASE_URL = "postgresql://suratech:suratech123@35.198.237.133:5433/meal_mate"
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
