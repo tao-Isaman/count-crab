@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Database URL
-DATABASE_URL = "postgresql://suratech:suratech123@34.124.152.10:5433/meal_mate"
+DATABASE_URL = "postgresql://suratech:suratech123@35.198.237.133:5433/meal_mate"
 
 def wait_for_db(max_retries=5, retry_interval=5):
     """Wait for database to be ready"""
