@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, text
 import os
 
 # Database URL
-DATABASE_URL = "postgresql://suratech:suratech123@34.124.152.10:5433/meal_mate"
+DATABASE_URL = "postgresql://suratech:suratech123@34.124.218.65:5433/meal_mate"
 
 def run_migration():
     # Create SQLAlchemy engine
